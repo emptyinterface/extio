@@ -49,7 +49,10 @@ func (sc *ScannerWriter) Write(data []byte) (int, error) {
 	dataLen := len(data)
 
 	if sc.buf != nil {
-		data = append(sc.buf, data...)
+		tmp := make([]byte, len(sc.buf)+len(data))
+		copy(tmp, sc.buf)
+		copy(tmp[len(sc.buf):], data)
+		data = tmp
 		sc.buf = nil
 	}
 
@@ -62,10 +65,11 @@ func (sc *ScannerWriter) Write(data []byte) (int, error) {
 
 		if token == nil {
 			if adv == 0 {
-				if len(sc.buf)+len(data) > sc.maxBufSize {
+				if len(data) > sc.maxBufSize {
 					return 0, io.ErrShortBuffer
 				}
-				sc.buf = append(sc.buf, data...)
+				sc.buf = make([]byte, len(data))
+				copy(sc.buf, data)
 				return dataLen, nil
 			}
 		} else if err := sc.tokenFunc(token); err != nil {
